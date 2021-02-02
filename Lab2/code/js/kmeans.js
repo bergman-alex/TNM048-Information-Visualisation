@@ -38,6 +38,22 @@ function kmeans(data, k) {
         qualitycheck = qualityCheck(centroid,new_array,clusterIndexPerPoint);
 
         //End the loop if...
+        if(iterations == 0){
+            oldqualitycheck = qualitycheck;
+        }
+
+        if(iterations > 0){
+            qualityChange = oldqualitycheck - qualitycheck;
+        }
+
+        iterations++; 
+
+        if (qualityChange < 0.001 && qualityChange != 0) //check against threshold and that a change is made
+            converge = true; 
+        if (iterations == maxLoops) 
+            converge = true;
+
+        oldqualitycheck = qualitycheck;
 
     }
     while (converge == false)
@@ -60,6 +76,13 @@ function parseData(data){
 
     var array = [];
 
+    for (var i = 0; i < data.length; i++) { 
+    var tempArray = [];
+        for (var j in data[i]) {
+            tempArray.push(parseFloat(data[i][j]));
+        }
+        array.push(tempArray);
+    }
     return array;
 }
 
@@ -72,6 +95,15 @@ function parseData(data){
 function initCentroids(data, k){
 
     //Create k centroids
+
+    var centroid = [];
+
+    //Looping through the number of clusters k
+    for (var i = 0; i < k ; i++) {
+        var rand = Math.floor(Math.random() * data.length); //pick a random data point to act as the centroid
+
+        centroid.push(data[rand]);
+    }
 
     return centroid;
 }
@@ -86,6 +118,11 @@ function initCentroids(data, k){
 */
 function assignPointsToMeans(points, means){
 
+    var assignments = [];
+
+    for (var i = 0; i < points.length; i++) {
+        assignments[i] = findClosestMeanIndex(points[i], means);
+    }
     return assignments;
 };
 /**
@@ -97,6 +134,14 @@ function assignPointsToMeans(points, means){
  * @return {Number}
 */
 function findClosestMeanIndex(point, means){
+
+    var distances = [];
+
+    for (var i = 0; i < means.length; i++) {
+        
+        distances.push(euclideanDistance(point,means[i])); //fill array with distance to all means
+    }
+
 
     return findIndexOfMinimum(distances);
 };
@@ -112,6 +157,14 @@ function euclideanDistance(point1, point2){
     if (point1.length != point2.length)
         throw ("point1 and point2 must be of same dimension");
 
+    var sum = 0;
+
+    for (var i = 0; i < point1.length; i++) { //compatible with any dimension
+        sum += Math.pow(point1[i]-point2[i],2); 
+    }
+
+    sum = Math.sqrt(sum);
+
     return sum;
 
 };
@@ -125,6 +178,15 @@ function euclideanDistance(point1, point2){
 function findIndexOfMinimum(array){
 
     var index = 0;
+    var minVal = array[index]; //first value in array
+
+    for (var i = 1; i < array.length; i++) { // start by comparing the second value since minVal is the first
+        if(array[i] < minVal){
+
+            index = i;
+            minVal = array[i];
+        }
+    }
 
     return index;
 };
@@ -147,6 +209,24 @@ function computeClusterMeans(points, assignments, k){
     // for each cluster
     var newMeans = [];
 
+    for (var i = 0; i < k; i++) {
+
+        var whereIsk = [];
+
+        for (var n = 0; n < assignments.length; n++) {
+            if(assignments[n] == i){
+                whereIsk.push(points[n]);
+            }
+        }
+
+        if(whereIsk.length > 0){
+            newMeans.push(averagePosition(whereIsk));
+        }
+     }
+
+
+
+
     return newMeans;
 };
 
@@ -159,6 +239,25 @@ function computeClusterMeans(points, assignments, k){
  * @param {*} clusterIndexPerPoint
  */
 function qualityCheck(centroid, new_array, clusterIndexPerPoint){
+
+    var qualitycheck = 0;
+
+    for (var i = 0; i < centroid.length; i++) {
+        
+        for (var j = 0; j < new_array.length; j++) {
+            
+            if(clusterIndexPerPoint[j] == i){
+
+               for (var l = 0; l < centroid.length; l++) {
+                    
+                    qualitycheck = Math.pow(new_array[j][l] - centroid[i][l], 2);
+                }     
+
+            }
+        }       
+    }
+
+
     return qualitycheck;
 }
 
